@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ChainClient, HttpChain, HttpChainClient, fetchBeaconByTime } from "drand-client";
 
+
 const App = () => {
   const [chain, setChain] = useState<ChainClient | null>(null)
   const [numbers, setNumbers] = useState<number[][]>([])
@@ -13,35 +14,46 @@ const App = () => {
 
   useEffect(() => {
     fetchChain()
-  }, [chain])
+  }, [])
+
+  const generateHash = async (input: string) => {
+    const encoder = new TextEncoder()
+    const data = encoder.encode(input)
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+    const hashArray = Array.from(new Uint8Array(hashBuffer))
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+  }
 
   const getNumbers = async () => {
     if (!chain) return
+    const beacon = await fetchBeaconByTime(chain, Date.now())
+    const randomness = beacon.randomness
+
+    const generateSet = (seed: string) => {
+      let seedValue = Array.from(seed).reduce((acc, char) => acc + char.charCodeAt(0), 0)
+      const random = () => {
+        const x = Math.sin(seedValue++) * 10000
+        return x - Math.floor(x)
+      }
+      const numbers = new Set<number>()
+      while (numbers.size < 6) {
+        const num = Math.floor(random() * 45) + 1
+        numbers.add(num)
+      }
+      return Array.from(numbers).sort((a, b) => a - b)
+    }
 
     const allSets = []
-
     for (let i = 0; i < setCount; i++) {
-      const beacon = await fetchBeaconByTime(chain, Date.now())
-      const randomness = beacon.randomness
-      const numbersSet = new Set<number>()
-      let index = i * 2
-
-      while (numbersSet.size < 6) {
-        const randomNum = parseInt(randomness.slice(index, index + 2), 16) % 45 + 1
-        numbersSet.add(randomNum)
-        index += 2
-        if (index >= randomness.length) {
-          index = 0
-        }
-      }
-
-      allSets.push(Array.from(numbersSet).sort((a, b) => a - b))
+      const nonce = await generateHash(randomness + "-" + i)
+      allSets.push(generateSet(nonce))
     }
 
     setNumbers(allSets)
   }
 
   return (
+
     <div style={
       {
         display: "flex",
@@ -52,8 +64,9 @@ const App = () => {
         width: "100vw"
       }
     }>
+      <h1>로또 번호 생성기</h1>
       {numbers.map((set, index) => (
-        <div key={index}>Set {index + 1}: {set.join(", ")}</div>
+        <h3 key={index}>세트 {index + 1}: {set.join(", ")}</h3>
       ))}
       <input
         type="number"
@@ -62,7 +75,7 @@ const App = () => {
         min="1"
         max="5"
       />
-      <button onClick={getNumbers}>Get Numbers</button>
+      <button onClick={() => getNumbers()}>숫자 가져오기</button>
     </div>
   )
 }
