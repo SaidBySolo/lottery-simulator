@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChainClient, HttpChain, HttpChainClient, fetchBeaconByTime } from "drand-client";
+import { ChainClient, HttpChain, HttpChainClient, fetchBeacon } from "drand-client";
 
 
 const App = () => {
@@ -8,10 +8,7 @@ const App = () => {
   const [setCount, setSetCount] = useState<number>(1)
 
   const fetchChain = async () => {
-    const chain = new HttpChainClient(new HttpChain("https://api.drand.sh/52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971", {
-      disableBeaconVerification: true, // `true` disables checking of signatures on beacons - faster but insecure!!!
-      noCache: false, // `true` disables caching when retrieving beacons for some providers
-    }))
+    const chain = new HttpChainClient(new HttpChain("https://api.drand.sh/52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971"))
     setChain(chain)
   }
 
@@ -29,7 +26,7 @@ const App = () => {
 
   const getNumbers = async () => {
     if (!chain) return
-    const beacon = await fetchBeaconByTime(chain, Date.now())
+    const beacon = await fetchBeacon(chain)
     const randomness = beacon.randomness
 
     const generateSet = (seed: string) => {
@@ -71,13 +68,13 @@ const App = () => {
       {numbers.map((set, index) => (
         <h3 key={index}>세트 {index + 1}: {set.join(", ")}</h3>
       ))}
-      <input
-        type="number"
-        value={setCount}
-        onChange={(e) => setSetCount(Number(e.target.value))}
-        min="1"
-        max="5"
-      />
+      <select value={setCount} onChange={(e) => setSetCount(Number(e.target.value))}>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+      </select>
       <button onClick={() => getNumbers()}>숫자 가져오기</button>
     </div>
   )
