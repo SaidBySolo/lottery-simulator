@@ -8,7 +8,7 @@ const App = () => {
   const [setCount, setSetCount] = useState<number>(1)
 
   const fetchChain = async () => {
-    const chain = new HttpChainClient(new HttpCachingChain("https://api.drand.sh/52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971") , {
+    const chain = new HttpChainClient(new HttpCachingChain("https://drand.cloudflare.com/52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971") , {
       disableBeaconVerification: false, // `true` disables checking of signatures on beacons - faster but insecure!!!
       noCache: false, // `true` disables caching when retrieving beacons for some providers
     })
